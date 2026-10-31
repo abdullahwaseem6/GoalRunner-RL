@@ -52,7 +52,7 @@ public class RunnerAgent : Agent
         transform.Rotate(0f, turn * turnSpeed * Time.fixedDeltaTime, 0f);
 
         float dist = Vector3.Distance(transform.localPosition, goal.localPosition);
-        AddReward(0.05f * (prevDist - dist));
+        AddReward(0.1f * (prevDist - dist));
         prevDist = dist;
         AddReward(-1f / MaxStep);
     }
@@ -72,7 +72,7 @@ public class RunnerAgent : Agent
 
     void OnCollisionEnter(Collision c)
     {
-        if (c.collider.CompareTag("Obstacle")) { AddReward(-1f); EndEpisode(); }
+        if (c.collider.CompareTag("Obstacle")) { AddReward(-0.5f); EndEpisode(); }
         else if (c.collider.CompareTag("Wall")) { AddReward(-0.1f); }
     }
 }
