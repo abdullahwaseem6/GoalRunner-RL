@@ -1,58 +1,42 @@
-# ABS611 Board — Interactive Task Board
+# Goal Runner – Unity ML-Agents (Intro to RL project)
 
-A responsive Kanban-style task board for organising work across three stages: **To Do**, **In Progress** and **Completed**.
-Built with plain **HTML5, CSS3 and vanilla JavaScript (ES6+)**, with no frameworks.
+A 3D agent learns to reach a goal in a walled arena while avoiding 2 blocks that slide back and forth. Trained with PPO (Unity 2022.3, ml-agents 2.3.0-exp.3, Python mlagents 0.30.0).
 
-**Live demo:** https://abdullahwaseem6.github.io/Interactive-Task-Board/
+## Environment
+- 12x12 arena, 4 walls, a goal at a random position, and **2 moving obstacles** sliding at random speeds (1-3.5).
+- **16 arenas** in one scene = 16 parallel environments.
+- Built by the editor menu **GoalRunner -> Build Arenas** (Assets/Editor/ArenaBuilder.cs).
 
----
+## Agent
+- **Sensors:** RayPerceptionSensor3D (tags Goal, Obstacle, Wall) + 5 vector observations (local velocity x/z, goal direction x/z, goal distance).
+- **Actions:** 3 continuous: forward/back, strafe, turn.
 
-## Features
+| Event | Reward |
+|---|---|
+| Reach goal | +1 (episode ends) |
+| Hit obstacle | -0.5 (episode ends) |
+| Touch wall | -0.1 |
+| Moving closer to goal | +0.1 per meter |
+| Every step | -1 / 1500 |
 
-### Core
-- **Add tasks** with a title, an optional description, a category (Development, Design, Marketing) and a priority (Low, Medium, High).
-- **Move tasks** between columns using the dropdown on each card, or by dragging the card.
-- **Delete tasks** from the board.
-- **Persistence:** tasks are saved in the browser's `localStorage`, so they survive a page refresh.
+## Training runs (500k steps each)
+| Run | Change | Final mean reward |
+|---|---|---|
+| runner_base | 256 units x 2 layers, lr 3e-4 | **~0.98 (best)** |
+| runner_lr | learning rate 1e-3 | ~0.6-0.8 (unstable) |
+| runner_curiosity | + curiosity reward (0.02) | ~0.23 |
+| runner_big | 512 units x 3 layers | ~0.15 (learns slower) |
+| runner_small | 64 units x 1 layer | -0.69 (too small) |
+| runner_base_v1 | old reward (shaping 0.05, obstacle -1) | ~-1 (did not learn) |
 
-### Interface
-- **Responsive design:** three columns on desktop; on phones the form fields and the columns stack into one column.
-- **Priority colours:** High = coral red, Medium = amber, Low = green. The colour shows on the card's left edge and on its priority label.
-- **Search and filter:** search tasks by title and filter by category. Empty columns explain why they are empty.
+**Lesson:** v1 never learned because the obstacle penalty was too harsh and the distance reward too weak. Doubling shaping and halving the penalty fixed it.
 
-### Bonus features
-- **Drag and drop** between columns using the native HTML5 Drag and Drop API.
-- **Dark / light mode** toggle. Dark is the default, and the choice is remembered.
-- **Task counter** in the header showing active vs completed tasks.
+## TensorBoard
+Screenshots are in the screenshots folder: tb_reward.png (cumulative reward), tb_reward_hist.png, tb_episode_length.png, tb_losses.png.
 
----
+## How to run
+    conda activate unity
+    mlagents-learn config/runner_base.yaml --run-id=runner_base
+    tensorboard --logdir results
 
-## How the code works
-
-- All tasks live in one array, `tasks`. Every action (add, move, delete) follows the same pattern:
-  **change the array → save it to `localStorage` → redraw the board with `renderTasks()`**.
-- Search and category filters only change what `renderTasks()` shows. They never change the saved data.
-- All colours are CSS variables in `:root`. Light mode redefines the same variables under `[data-theme="light"]`, so switching theme is a single attribute change on `<html>`.
-- Drag and drop: each card stores its task ID when dragging starts. Each column reads its `data-status` attribute on drop and calls the same `updateTaskStatus()` function the dropdown uses.
-- User text is escaped before it is put into the page, so typed HTML is shown as text and never runs.
-
-## Project structure
-
-```
-├── index.html   Page structure: header, form, filters and the three columns
-├── styles.css   Dark and light themes, layout, cards and phone styles
-└── script.js    Tasks, localStorage, rendering, drag and drop, theme switch
-```
-
-## Run locally
-
-Open `index.html` in a browser, or use the Live Server extension in VS Code.
-
-## Changes from the starter files
-
-- Added the description field (form, saving and display on cards).
-- Fixed two invalid CSS values (`align-items: centre` → `center`).
-- New dark premium design with a light theme, using CSS variables for every colour.
-- Added the task counter, drag and drop, dark/light toggle and empty-column messages.
-- Escaped category and priority text as well as the title, and blocked tasks with an empty title.
-- Phone layout improvements.
+To watch the trained agent: set Behavior Parameters -> Model = Assets/Models/Runner, Behavior Type = Inference Only, press Play.
