@@ -40,3 +40,10 @@ Screenshots are in the screenshots folder: tb_reward.png (cumulative reward), tb
     tensorboard --logdir results
 
 To watch the trained agent: set Behavior Parameters -> Model = Assets/Models/Runner, Behavior Type = Inference Only, press Play.
+
+## Comparing training runs
+Use a unique `--run-id` for each experiment so its results stay separate. For example:
+
+    mlagents-learn config/runner_small.yaml --run-id=runner_small_test
+
+Press Play in Unity when the trainer is ready. Open TensorBoard with `tensorboard --logdir results` to compare cumulative reward and episode length across runs.
