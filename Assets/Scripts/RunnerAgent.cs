@@ -52,6 +52,7 @@ public class RunnerAgent : Agent
         transform.Rotate(0f, turn * turnSpeed * Time.fixedDeltaTime, 0f);
 
         float dist = Vector3.Distance(transform.localPosition, goal.localPosition);
+        // Reward progress toward the goal; moving away produces a negative reward.
         AddReward(0.1f * (prevDist - dist));
         prevDist = dist;
         AddReward(-1f / MaxStep);
